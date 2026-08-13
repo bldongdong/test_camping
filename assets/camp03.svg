@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <rect width="800" height="520" rx="32" fill="#f1fbff"/>
+  <rect y="350" width="800" height="170" fill="#9fd0e2"/>
+  <path d="M110 360 C220 300 320 310 420 360 C560 430 710 430 800 370 L800 520 L0 520 Z" fill="#6cb3c4"/>
+  <rect x="140" y="210" width="120" height="120" rx="16" fill="#fffcd6"/>
+  <path d="M490 220 Q580 140 660 220" stroke="#4b8f76" stroke-width="14" fill="none"/>
+  <circle cx="620" cy="165" r="42" fill="#ffe49b"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#2d5564">초록호수 캠핑장</text>
+</svg>

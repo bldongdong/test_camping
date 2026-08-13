@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <rect width="800" height="520" rx="32" fill="#eef7ff"/>
+  <rect y="360" width="800" height="160" fill="#7eb8e8"/>
+  <path d="M0 350 C140 290 260 300 360 360 C460 420 620 430 800 360 L800 520 L0 520 Z" fill="#4a87c3"/>
+  <path d="M180 280 C220 220 300 185 360 220 C350 250 330 290 270 320 Z" fill="#f8cf6f"/>
+  <rect x="470" y="200" width="120" height="110" rx="22" fill="#fffaf0"/>
+  <circle cx="620" cy="160" r="48" fill="#ffd98f"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#254d7a">해돋이 오션캠프</text>
+</svg>

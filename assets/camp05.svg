@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <rect width="800" height="520" rx="32" fill="#fef8f0"/>
+  <rect y="360" width="800" height="160" fill="#f0b96e"/>
+  <path d="M0 350 C180 300 320 300 480 360 C600 410 690 420 800 370 L800 520 L0 520 Z" fill="#de7f3d"/>
+  <path d="M250 260 C300 200 380 200 430 260" stroke="#4f7b65" stroke-width="14" fill="none"/>
+  <circle cx="620" cy="165" r="50" fill="#ffe9a7"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#7b3e10">제주 별빛야영장</text>
+</svg>

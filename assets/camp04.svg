@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <rect width="800" height="520" rx="32" fill="#f6f5ff"/>
+  <rect y="350" width="800" height="170" fill="#c4b3ff"/>
+  <path d="M0 340 L200 220 L320 300 L480 180 L700 300 L800 260 L800 520 L0 520 Z" fill="#7f6bd8"/>
+  <circle cx="620" cy="160" r="50" fill="#ffeaa8"/>
+  <rect x="160" y="210" width="120" height="110" rx="16" fill="#fff9e7"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#4d3b97">하늘전망 힐링캠프</text>
+</svg>

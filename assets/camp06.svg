@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="520" viewBox="0 0 800 520">
+  <rect width="800" height="520" rx="32" fill="#f4fff4"/>
+  <rect y="350" width="800" height="170" fill="#82c98b"/>
+  <path d="M100 350 L220 220 L340 330 L460 180 L600 330 L700 240 L800 320 L800 520 L0 520 Z" fill="#4e9d59"/>
+  <rect x="170" y="210" width="110" height="110" rx="16" fill="#fffbe1"/>
+  <circle cx="620" cy="160" r="48" fill="#ffe29b"/>
+  <text x="400" y="470" text-anchor="middle" font-family="Arial, sans-serif" font-size="34" fill="#1f5d30">포레스트 글로우</text>
+</svg>
