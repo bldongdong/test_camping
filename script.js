@@ -443,6 +443,17 @@ async function removeFavorite(campName) {
   await renderFavoriteList();
 }
 
+async function handleLogout() {
+  const { error } = await supabaseClient.auth.signOut();
+  if (error) {
+    console.error("로그아웃 실패:", error);
+    return;
+  }
+
+  localStorage.removeItem(USER_SESSION_KEY);
+  window.location.href = "index.html";
+}
+
 function updateAuthUI() {
   if (!loginBox) return;
 
@@ -455,8 +466,16 @@ function updateAuthUI() {
         <small>Logged in</small>
         <strong>${user.email || "Camp User"}</strong>
       </div>
-      <a class="mypage-trigger" href="mypage.html" id="mypage-btn">마이페이지</a>
+      <div class="login-actions logged-actions">
+        <a class="mypage-trigger" href="mypage.html" id="mypage-btn">마이페이지</a>
+        <button id="logout-btn" type="button" class="logout-btn">로그아웃</button>
+      </div>
     `;
+
+    const logoutBtn = document.getElementById("logout-btn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", handleLogout);
+    }
     return;
   }
 
@@ -714,15 +733,7 @@ async function renderMypageState() {
 
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", async () => {
-      const { error } = await supabaseClient.auth.signOut();
-      if (error) {
-        console.error("로그아웃 실패:", error);
-        return;
-      }
-      localStorage.removeItem(USER_SESSION_KEY);
-      window.location.href = "index.html";
-    });
+    logoutBtn.addEventListener("click", handleLogout);
   }
 
   await renderFavoriteList();
