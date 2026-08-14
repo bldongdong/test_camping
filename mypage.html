@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마이페이지</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero mypage-hero">
+      <div class="hero-overlay"></div>
+      <div class="hero-content">
+        <div class="topbar">
+          <p class="brand-mark">Forest Camp</p>
+          <div id="login-box" class="login-box"></div>
+        </div>
+
+        <p class="eyebrow">마이페이지</p>
+        <h1>찜한 캠핑장을 한눈에 확인하세요</h1>
+        <p>로그인한 계정으로 저장된 나만의 캠핑 리스트를 다시 확인할 수 있습니다.</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel mypage-panel">
+        <div class="section-heading">
+          <p class="eyebrow">찜한 캠핑장</p>
+          <h2>나의 캠핑 리스트</h2>
+        </div>
+        <div class="mypage-actions">
+          <button id="logout-btn" class="btn secondary" type="button">로그아웃</button>
+        </div>
+        <div id="favorite-list" class="favorite-list"></div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="script.js"></script>
+  </body>
+</html>

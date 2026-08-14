@@ -7,27 +7,25 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div id="login-box">
-      <h2>로그인</h2>
-
-      <input
-        type="email"
-        id="email"
-        placeholder="이메일"
-      >
-      <input
-          type="password"
-       id="password"
-        placeholder="비밀번호"
-      >
-
-     <button id="login-btn">로그인</button>
-
-     <p id="login-message"></p>
-</div>
     <header class="hero">
       <div class="hero-overlay"></div>
       <div class="hero-content">
+        <div class="topbar">
+          <p class="brand-mark">Forest Camp</p>
+          <div id="login-box" class="login-box">
+            <div class="login-field">
+              <label for="email">이메일</label>
+              <input type="email" id="email" placeholder="이메일" />
+            </div>
+            <div class="login-field">
+              <label for="password">비밀번호</label>
+              <input type="password" id="password" placeholder="비밀번호" />
+            </div>
+            <button id="login-btn" type="button">로그인</button>
+            <p id="login-message" aria-live="polite"></p>
+          </div>
+        </div>
+
         <p class="eyebrow">대한민국 전국 오감 캠핑 추천</p>
         <h1>Forest camp!!!!!</h1>
         <p>추천 설문부터 실시간 예약까지, 감성 가득한 캠핑 여정을 지금 바로 시작해보세요.</p>
@@ -38,6 +36,8 @@
         </div>
       </div>
     </header>
+      <button id="favorite-test-btn">캠핑장 찜 테스트</button>
+      <p id="favorite-message"></p>
 
     <main>
       <section id="recommendation" class="panel">
@@ -198,6 +198,7 @@
           <div id="reservation-summary" class="reservation-summary"></div>
         </div>
       </section>
+
     </main>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="script.js"></script>

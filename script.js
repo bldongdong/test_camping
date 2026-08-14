@@ -99,6 +99,16 @@ const quizDots = Array.from(document.querySelectorAll(".quiz-step"));
 const nextButton = document.getElementById("next-question");
 const resultButton = document.getElementById("show-result");
 const choiceButtons = Array.from(document.querySelectorAll(".choice-btn"));
+const mypagePanel = document.getElementById("mypage-panel");
+const favoriteList = document.getElementById("favorite-list");
+const loginBox = document.getElementById("login-box");
+const loginBtn = document.getElementById("login-btn");
+const loginMessage = document.getElementById("login-message");
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+
+const USER_SESSION_KEY = "camp-user-session";
+const FAVORITE_STORAGE_KEY = "camp-favorites";
 
 let selectedRegion = "전국";
 let selectedCampId = camps[0].id;
@@ -115,27 +125,68 @@ function saveBookings(bookings) {
   localStorage.setItem(storageKey, JSON.stringify(bookings));
 }
 
+function getCurrentUser() {
+  const raw = localStorage.getItem(USER_SESSION_KEY);
+  return raw ? JSON.parse(raw) : null;
+}
+
+function setCurrentUser(user) {
+  if (!user) {
+    localStorage.removeItem(USER_SESSION_KEY);
+    return;
+  }
+  localStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
+}
+
+function getFavoriteList() {
+  const saved = localStorage.getItem(FAVORITE_STORAGE_KEY);
+  return saved ? JSON.parse(saved) : [];
+}
+
+function saveFavoriteList(list) {
+  localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(list));
+}
+
+function isLoggedIn() {
+  return Boolean(getCurrentUser());
+}
+
 function renderCampCards() {
   const filtered = selectedRegion === "전국" ? camps : camps.filter((camp) => camp.region === selectedRegion);
+  const favorites = getFavoriteList();
+
   campGrid.innerHTML = filtered
     .map(
-      (camp) => `
-        <article class="camp-card">
-          <img src="${camp.image}" alt="${camp.name}" />
-          <div class="camp-body">
-            <span class="tag">${camp.region} · ★ ${camp.rating}</span>
-            <h3>${camp.name}</h3>
-            <p>${camp.description}</p>
-            <ul class="meta-list">
-              <li>요금: ${camp.price}</li>
-              <li>이용시간: ${camp.hours}</li>
-              <li>편의시설: ${camp.facilities}</li>
-            </ul>
-          </div>
-        </article>
-      `
+      (camp) => {
+        const isFavorite = favorites.some((favorite) => favorite.id === camp.id);
+        return `
+          <article class="camp-card">
+            <img src="${camp.image}" alt="${camp.name}" />
+            <div class="camp-body">
+              <span class="tag">${camp.region} · ★ ${camp.rating}</span>
+              <h3>${camp.name}</h3>
+              <p>${camp.description}</p>
+              <ul class="meta-list">
+                <li>요금: ${camp.price}</li>
+                <li>이용시간: ${camp.hours}</li>
+                <li>편의시설: ${camp.facilities}</li>
+              </ul>
+              <button class="favorite-btn ${isFavorite ? "active" : ""}" data-camp-id="${camp.id}" type="button">
+                ${isFavorite ? "찜 완료" : "찜하기"}
+              </button>
+            </div>
+          </article>
+        `;
+      }
     )
     .join("");
+
+  document.querySelectorAll(".favorite-btn").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      const campId = event.currentTarget.dataset.campId;
+      toggleFavorite(campId);
+    });
+  });
 }
 
 function renderRegionDetail() {
@@ -250,6 +301,134 @@ function renderRecommendation(result = null) {
   `;
 }
 
+function renderFavoriteList() {
+  const list = document.getElementById("favorite-list");
+  if (!list) return;
+
+  const favorites = getFavoriteList();
+
+  if (!favorites.length) {
+    list.innerHTML = '<p class="mypage-empty">찜한 캠핑장이 아직 없습니다.</p>';
+    return;
+  }
+
+  list.innerHTML = favorites
+    .map(
+      (camp) => `
+        <div class="favorite-item">
+          <div>
+            <strong>${camp.name}</strong>
+            <span>${camp.region} · ${camp.location}</span>
+          </div>
+          <div class="favorite-item-actions">
+            <a class="favorite-detail-link" href="detail.html#${camp.id || ""}">상세보기</a>
+            <button class="favorite-remove-btn" data-camp-id="${camp.id}" type="button">삭제</button>
+          </div>
+        </div>
+      `
+    )
+    .join("");
+
+  document.querySelectorAll(".favorite-remove-btn").forEach((button) => {
+    button.addEventListener("click", () => {
+      removeFavorite(button.dataset.campId);
+    });
+  });
+}
+
+function toggleFavorite(campId) {
+  if (!isLoggedIn()) {
+    alert("로그인이 필요합니다.");
+    return;
+  }
+
+  const favorites = getFavoriteList();
+  const camp = camps.find((item) => item.id === campId);
+  if (!camp) return;
+
+  const existingIndex = favorites.findIndex((item) => item.id === campId);
+
+  if (existingIndex >= 0) {
+    favorites.splice(existingIndex, 1);
+  } else {
+    favorites.push({ id: camp.id, name: camp.name, region: camp.region, location: camp.location, price: camp.price });
+  }
+
+  saveFavoriteList(favorites);
+  renderCampCards();
+  renderFavoriteList();
+}
+
+function removeFavorite(campId) {
+  const favorites = getFavoriteList().filter((item) => item.id !== campId);
+  saveFavoriteList(favorites);
+  renderCampCards();
+  renderFavoriteList();
+}
+
+function updateAuthUI() {
+  if (!loginBox) return;
+
+  const user = getCurrentUser();
+  const loggedIn = Boolean(user);
+
+  if (loggedIn) {
+    loginBox.innerHTML = `
+      <div class="logged-user">
+        <small>Logged in</small>
+        <strong>${user.email || "Camp User"}</strong>
+      </div>
+      <a class="mypage-trigger" href="mypage.html" id="mypage-btn">마이페이지</a>
+    `;
+    return;
+  }
+
+  loginBox.innerHTML = `
+    <div class="login-field">
+      <label for="email">이메일</label>
+      <input type="email" id="email" placeholder="이메일" />
+    </div>
+    <div class="login-field">
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" placeholder="비밀번호" />
+    </div>
+    <button id="login-btn" type="button">로그인</button>
+    <p id="login-message" aria-live="polite"></p>
+  `;
+  attachLoginHandler();
+}
+
+function attachLoginHandler() {
+  const currentLoginBtn = document.getElementById("login-btn");
+  if (!currentLoginBtn) return;
+
+  currentLoginBtn.addEventListener("click", async () => {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const message = document.getElementById("login-message");
+
+    if (!email || !password) {
+      message.textContent = "이메일과 비밀번호를 모두 입력해 주세요.";
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      message.textContent = "로그인 실패: " + error.message;
+      return;
+    }
+
+    setCurrentUser({ email: data.user?.email || email });
+    message.textContent = "로그인 성공!";
+    updateAuthUI();
+    window.location.reload();
+  });
+}
+
 function setActiveStep(stepIndex) {
   quizSteps.forEach((step, index) => {
     step.classList.toggle("active", index === stepIndex);
@@ -308,55 +487,107 @@ function handleReservation(e) {
   );
 }
 
-regionButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    regionButtons.forEach((item) => item.classList.remove("active"));
-    button.classList.add("active");
-    selectedRegion = button.dataset.region;
-    renderCampCards();
-    renderRegionDetail();
+if (regionButtons && regionButtons.length) {
+  regionButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      regionButtons.forEach((item) => item.classList.remove("active"));
+      button.classList.add("active");
+      selectedRegion = button.dataset.region;
+      renderCampCards();
+      renderRegionDetail();
+    });
   });
-});
+}
 
-choiceButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const questionBlock = button.closest(".question-block");
-    questionBlock.querySelectorAll(".choice-btn").forEach((item) => item.classList.remove("selected"));
-    button.classList.add("selected");
-    answers[currentStep] = button.dataset.value;
+if (choiceButtons && choiceButtons.length) {
+  choiceButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      const questionBlock = button.closest(".question-block");
+      questionBlock.querySelectorAll(".choice-btn").forEach((item) => item.classList.remove("selected"));
+      button.classList.add("selected");
+      answers[currentStep] = button.dataset.value;
+    });
   });
-});
+}
 
-nextButton.addEventListener("click", () => {
-  if (!answers[currentStep]) {
-    recommendationResult.innerHTML = "<p>한 가지 선택지를 골라주세요. 그럼 닮은 캠핑장도 딱 맞게 추천해드릴게요.</p>";
+if (nextButton) {
+  nextButton.addEventListener("click", () => {
+    if (!answers[currentStep]) {
+      recommendationResult.innerHTML = "<p>한 가지 선택지를 골라주세요. 그럼 닮은 캠핑장도 딱 맞게 추천해드릴게요.</p>";
+      return;
+    }
+    currentStep = Math.min(currentStep + 1, quizSteps.length - 1);
+    setActiveStep(currentStep);
+  });
+}
+
+if (resultButton) {
+  resultButton.addEventListener("click", () => {
+    if (!answers[currentStep]) {
+      recommendationResult.innerHTML = "<p>마지막 질문도 하나 선택해 주세요.</p>";
+      return;
+    }
+    const result = getQuizResult(answers);
+    renderRecommendation(result);
+  });
+}
+
+if (reservationForm) {
+  reservationForm.addEventListener("submit", handleReservation);
+}
+
+if (reservationSite) {
+  reservationSite.addEventListener("change", renderReservationStatus);
+}
+
+function renderMypageState() {
+  const list = document.getElementById("favorite-list");
+  if (!list) return;
+
+  const user = getCurrentUser();
+  if (!user) {
+    list.innerHTML = `
+      <div class="mypage-empty">
+        <p>로그인이 필요한 페이지입니다.</p>
+        <a class="btn primary" href="index.html">로그인 하러 가기</a>
+      </div>
+    `;
     return;
   }
-  currentStep = Math.min(currentStep + 1, quizSteps.length - 1);
-  setActiveStep(currentStep);
-});
 
-resultButton.addEventListener("click", () => {
-  if (!answers[currentStep]) {
-    recommendationResult.innerHTML = "<p>마지막 질문도 하나 선택해 주세요.</p>";
-    return;
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem(USER_SESSION_KEY);
+      window.location.href = "index.html";
+    });
   }
-  const result = getQuizResult(answers);
-  renderRecommendation(result);
-});
 
-reservationForm.addEventListener("submit", handleReservation);
-reservationSite.addEventListener("change", renderReservationStatus);
+  renderFavoriteList();
+}
 
-window.addEventListener("DOMContentLoaded", () => {
+function initHomePage() {
+  if (!recommendationResult || !campGrid || !reservationForm || !reservationSite || !reservationSummary) return;
+
   populateReservationOptions();
   reservationDate.value = new Date().toISOString().slice(0, 10);
   renderCampCards();
   renderRegionDetail();
   renderRecommendation();
   renderReservationStatus();
+  updateAuthUI();
   setActiveStep(0);
   setInterval(renderReservationStatus, 10000);
+}
+
+window.addEventListener("DOMContentLoaded", () => {
+  if (document.getElementById("favorite-list")) {
+    updateAuthUI();
+    renderMypageState();
+    return;
+  }
+
+  initHomePage();
 });
 
 const SUPABASE_URL = "https://nublnlxvmppmqkckikho.supabase.co";
@@ -367,24 +598,37 @@ const supabaseClient = supabase.createClient(
   SUPABASE_KEY
 );
 
-const loginBtn = document.getElementById("login-btn");
 
-loginBtn.addEventListener("click", async () => {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
-  const message = document.getElementById("login-message");
 
-  const { data, error } =
-    await supabaseClient.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+const favoriteTestBtn = document.getElementById("favorite-test-btn");
 
-  if (error) {
-    message.textContent = "로그인 실패: " + error.message;
+favoriteTestBtn.addEventListener("click", async () => {
+  const message = document.getElementById("favorite-message");
+
+  // 현재 로그인한 사용자 확인
+  const {
+    data: { user },
+    error: userError
+  } = await supabaseClient.auth.getUser();
+
+  if (userError || !user) {
+    message.textContent = "먼저 로그인해주세요.";
     return;
   }
 
-  message.textContent = "로그인 성공!";
-  console.log(data.user);
+  // favorites 테이블에 테스트 데이터 저장
+  const { error } = await supabaseClient
+    .from("favorites")
+    .insert({
+      user_id: user.id,
+      camping_name: "테스트 캠핑장"
+    });
+
+  if (error) {
+    message.textContent = "저장 실패: " + error.message;
+    console.error(error);
+    return;
+  }
+
+  message.textContent = "DB 저장 성공!";
 });
