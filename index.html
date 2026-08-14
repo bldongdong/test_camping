@@ -7,6 +7,28 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <div id="auth-modal" class="auth-modal hidden" aria-hidden="true">
+      <div class="auth-modal-card" role="dialog" aria-modal="true" aria-labelledby="signup-title">
+        <div class="auth-modal-header">
+          <h3 id="signup-title">회원가입</h3>
+          <button id="signup-close" type="button" aria-label="닫기">×</button>
+        </div>
+
+        <div class="auth-modal-body">
+          <label>
+            이메일
+            <input id="signup-email" type="email" placeholder="이메일을 입력하세요" />
+          </label>
+          <label>
+            비밀번호
+            <input id="signup-password" type="password" placeholder="비밀번호를 입력하세요" />
+          </label>
+          <button id="signup-submit" type="button" class="btn primary full">회원가입</button>
+          <p id="signup-message" class="auth-message" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+
     <header class="hero">
       <div class="hero-overlay"></div>
       <div class="hero-content">

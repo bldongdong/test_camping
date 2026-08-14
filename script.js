@@ -469,10 +469,14 @@ function updateAuthUI() {
       <label for="password">비밀번호</label>
       <input type="password" id="password" placeholder="비밀번호" />
     </div>
-    <button id="login-btn" type="button">로그인</button>
+    <div class="login-actions">
+      <button id="login-btn" type="button">로그인</button>
+      <button id="signup-toggle" type="button" class="signup-toggle">회원가입</button>
+    </div>
     <p id="login-message" aria-live="polite"></p>
   `;
   attachLoginHandler();
+  attachSignupFlow();
 }
 
 function attachLoginHandler() {
@@ -503,6 +507,82 @@ function attachLoginHandler() {
     message.textContent = "로그인 성공!";
     updateAuthUI();
     window.location.reload();
+  });
+}
+
+function openSignupModal() {
+  const modal = document.getElementById("auth-modal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+
+  const emailInput = document.getElementById("signup-email");
+  if (emailInput) emailInput.focus();
+}
+
+function closeSignupModal() {
+  const modal = document.getElementById("auth-modal");
+  if (!modal) return;
+  modal.classList.add("hidden");
+  modal.setAttribute("aria-hidden", "true");
+
+  const form = document.getElementById("signup-form");
+  if (form) form.reset();
+
+  const message = document.getElementById("signup-message");
+  if (message) message.textContent = "";
+}
+
+function attachSignupFlow() {
+  const toggle = document.getElementById("signup-toggle");
+  if (toggle) {
+    toggle.addEventListener("click", openSignupModal);
+  }
+
+  const close = document.getElementById("signup-close");
+  if (close) {
+    close.addEventListener("click", closeSignupModal);
+  }
+
+  const modal = document.getElementById("auth-modal");
+  if (modal) {
+    modal.addEventListener("click", (event) => {
+      if (event.target === modal) closeSignupModal();
+    });
+  }
+
+  const submit = document.getElementById("signup-submit");
+  if (!submit) return;
+
+  submit.addEventListener("click", async () => {
+    const email = document.getElementById("signup-email").value.trim();
+    const password = document.getElementById("signup-password").value;
+    const message = document.getElementById("signup-message");
+
+    if (!email || !password) {
+      message.textContent = "이메일과 비밀번호를 모두 입력해 주세요.";
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      message.textContent = "회원가입 실패: " + error.message;
+      return;
+    }
+
+    message.textContent = "회원가입이 완료되었습니다. 로그인 화면으로 돌아갑니다.";
+
+    setTimeout(() => {
+      closeSignupModal();
+      const loginMessage = document.getElementById("login-message");
+      if (loginMessage) {
+        loginMessage.textContent = "회원가입이 완료되었습니다. 이제 로그인해 주세요.";
+      }
+    }, 1200);
   });
 }
 
