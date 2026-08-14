@@ -108,7 +108,6 @@ const emailInput = document.getElementById("email");
 const passwordInput = document.getElementById("password");
 
 const USER_SESSION_KEY = "camp-user-session";
-const FAVORITE_STORAGE_KEY = "camp-favorites";
 
 let selectedRegion = "전국";
 let selectedCampId = camps[0].id;
@@ -138,27 +137,54 @@ function setCurrentUser(user) {
   localStorage.setItem(USER_SESSION_KEY, JSON.stringify(user));
 }
 
-function getFavoriteList() {
-  const saved = localStorage.getItem(FAVORITE_STORAGE_KEY);
-  return saved ? JSON.parse(saved) : [];
+async function getSupabaseCurrentUser() {
+  const {
+    data: { user },
+    error,
+  } = await supabaseClient.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
 }
 
-function saveFavoriteList(list) {
-  localStorage.setItem(FAVORITE_STORAGE_KEY, JSON.stringify(list));
+async function fetchFavoriteRows() {
+  const user = await getSupabaseCurrentUser();
+  if (!user) return [];
+
+  const { data, error } = await supabaseClient
+    .from("favorites")
+    .select("id, user_id, camping_name")
+    .eq("user_id", user.id)
+    .order("id", { ascending: false });
+
+  if (error) {
+    console.error("찜 목록 조회 실패:", error);
+    return [];
+  }
+
+  return data || [];
+}
+
+async function fetchFavoriteCampNames() {
+  const rows = await fetchFavoriteRows();
+  return rows.map((item) => item.camping_name);
 }
 
 function isLoggedIn() {
   return Boolean(getCurrentUser());
 }
 
-function renderCampCards() {
+async function renderCampCards() {
   const filtered = selectedRegion === "전국" ? camps : camps.filter((camp) => camp.region === selectedRegion);
-  const favorites = getFavoriteList();
+  const favoriteNames = await fetchFavoriteCampNames();
 
   campGrid.innerHTML = filtered
     .map(
       (camp) => {
-        const isFavorite = favorites.some((favorite) => favorite.id === camp.id);
+        const isFavorite = favoriteNames.includes(camp.name);
         return `
           <article class="camp-card">
             <img src="${camp.image}" alt="${camp.name}" />
@@ -171,7 +197,7 @@ function renderCampCards() {
                 <li>이용시간: ${camp.hours}</li>
                 <li>편의시설: ${camp.facilities}</li>
               </ul>
-              <button class="favorite-btn ${isFavorite ? "active" : ""}" data-camp-id="${camp.id}" type="button">
+              <button class="favorite-btn ${isFavorite ? "active" : ""}" data-camp-name="${camp.name}" type="button">
                 ${isFavorite ? "찜 완료" : "찜하기"}
               </button>
             </div>
@@ -182,9 +208,9 @@ function renderCampCards() {
     .join("");
 
   document.querySelectorAll(".favorite-btn").forEach((button) => {
-    button.addEventListener("click", (event) => {
-      const campId = event.currentTarget.dataset.campId;
-      toggleFavorite(campId);
+    button.addEventListener("click", async (event) => {
+      const campName = event.currentTarget.dataset.campName;
+      await toggleFavorite(campName);
     });
   });
 }
@@ -301,69 +327,120 @@ function renderRecommendation(result = null) {
   `;
 }
 
-function renderFavoriteList() {
+async function renderFavoriteList() {
   const list = document.getElementById("favorite-list");
   if (!list) return;
 
-  const favorites = getFavoriteList();
+  const user = await getSupabaseCurrentUser();
+  if (!user) {
+    list.innerHTML = '<p class="mypage-empty">로그인이 필요한 페이지입니다.</p>';
+    return;
+  }
 
-  if (!favorites.length) {
+  const rows = await fetchFavoriteRows();
+
+  if (!rows.length) {
     list.innerHTML = '<p class="mypage-empty">찜한 캠핑장이 아직 없습니다.</p>';
     return;
   }
 
-  list.innerHTML = favorites
-    .map(
-      (camp) => `
+  list.innerHTML = rows
+    .map((favorite) => {
+      const camp = camps.find((item) => item.name === favorite.camping_name);
+      return `
         <div class="favorite-item">
           <div>
-            <strong>${camp.name}</strong>
-            <span>${camp.region} · ${camp.location}</span>
+            <strong>${favorite.camping_name}</strong>
+            <span>${camp ? `${camp.region} · ${camp.location}` : "캠핑장 정보"}</span>
           </div>
           <div class="favorite-item-actions">
-            <a class="favorite-detail-link" href="detail.html#${camp.id || ""}">상세보기</a>
-            <button class="favorite-remove-btn" data-camp-id="${camp.id}" type="button">삭제</button>
+            <a class="favorite-detail-link" href="detail.html">상세보기</a>
+            <button class="favorite-remove-btn" data-camp-name="${favorite.camping_name}" type="button">삭제</button>
           </div>
         </div>
-      `
-    )
+      `;
+    })
     .join("");
 
   document.querySelectorAll(".favorite-remove-btn").forEach((button) => {
-    button.addEventListener("click", () => {
-      removeFavorite(button.dataset.campId);
+    button.addEventListener("click", async () => {
+      await removeFavorite(button.dataset.campName);
     });
   });
 }
 
-function toggleFavorite(campId) {
+async function toggleFavorite(campName) {
   if (!isLoggedIn()) {
     alert("로그인이 필요합니다.");
     return;
   }
 
-  const favorites = getFavoriteList();
-  const camp = camps.find((item) => item.id === campId);
-  if (!camp) return;
-
-  const existingIndex = favorites.findIndex((item) => item.id === campId);
-
-  if (existingIndex >= 0) {
-    favorites.splice(existingIndex, 1);
-  } else {
-    favorites.push({ id: camp.id, name: camp.name, region: camp.region, location: camp.location, price: camp.price });
+  const user = await getSupabaseCurrentUser();
+  if (!user) {
+    alert("로그인이 필요합니다.");
+    return;
   }
 
-  saveFavoriteList(favorites);
-  renderCampCards();
-  renderFavoriteList();
+  const camp = camps.find((item) => item.name === campName);
+  if (!camp) return;
+
+  const { data: existingRows, error: fetchError } = await supabaseClient
+    .from("favorites")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("camping_name", camp.name);
+
+  if (fetchError) {
+    console.error("찜 여부 확인 실패:", fetchError);
+    return;
+  }
+
+  if (existingRows && existingRows.length > 0) {
+    const { error: deleteError } = await supabaseClient
+      .from("favorites")
+      .delete()
+      .eq("id", existingRows[0].id);
+
+    if (deleteError) {
+      console.error("찜 삭제 실패:", deleteError);
+      return;
+    }
+  } else {
+    const { error: insertError } = await supabaseClient
+      .from("favorites")
+      .insert({
+        user_id: user.id,
+        camping_name: camp.name,
+      });
+
+    if (insertError) {
+      console.error("찜 저장 실패:", insertError);
+      alert("찜 저장에 실패했습니다.");
+      return;
+    }
+  }
+
+  await renderCampCards();
+  await renderFavoriteList();
 }
 
-function removeFavorite(campId) {
-  const favorites = getFavoriteList().filter((item) => item.id !== campId);
-  saveFavoriteList(favorites);
-  renderCampCards();
-  renderFavoriteList();
+async function removeFavorite(campName) {
+  const user = await getSupabaseCurrentUser();
+  if (!user) return;
+
+  const { error } = await supabaseClient
+    .from("favorites")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("camping_name", campName);
+
+  if (error) {
+    console.error("찜 삭제 실패:", error);
+    return;
+  }
+
+  await renderCampCards();
+  await renderFavoriteList();
 }
 
 function updateAuthUI() {
@@ -540,11 +617,11 @@ if (reservationSite) {
   reservationSite.addEventListener("change", renderReservationStatus);
 }
 
-function renderMypageState() {
+async function renderMypageState() {
   const list = document.getElementById("favorite-list");
   if (!list) return;
 
-  const user = getCurrentUser();
+  const user = await getSupabaseCurrentUser();
   if (!user) {
     list.innerHTML = `
       <div class="mypage-empty">
@@ -557,21 +634,26 @@ function renderMypageState() {
 
   const logoutBtn = document.getElementById("logout-btn");
   if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
+    logoutBtn.addEventListener("click", async () => {
+      const { error } = await supabaseClient.auth.signOut();
+      if (error) {
+        console.error("로그아웃 실패:", error);
+        return;
+      }
       localStorage.removeItem(USER_SESSION_KEY);
       window.location.href = "index.html";
     });
   }
 
-  renderFavoriteList();
+  await renderFavoriteList();
 }
 
-function initHomePage() {
+async function initHomePage() {
   if (!recommendationResult || !campGrid || !reservationForm || !reservationSite || !reservationSummary) return;
 
   populateReservationOptions();
   reservationDate.value = new Date().toISOString().slice(0, 10);
-  renderCampCards();
+  await renderCampCards();
   renderRegionDetail();
   renderRecommendation();
   renderReservationStatus();
@@ -580,14 +662,14 @@ function initHomePage() {
   setInterval(renderReservationStatus, 10000);
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener("DOMContentLoaded", async () => {
   if (document.getElementById("favorite-list")) {
     updateAuthUI();
-    renderMypageState();
+    await renderMypageState();
     return;
   }
 
-  initHomePage();
+  await initHomePage();
 });
 
 const SUPABASE_URL = "https://nublnlxvmppmqkckikho.supabase.co";
@@ -597,38 +679,3 @@ const supabaseClient = supabase.createClient(
   SUPABASE_URL,
   SUPABASE_KEY
 );
-
-
-
-const favoriteTestBtn = document.getElementById("favorite-test-btn");
-
-favoriteTestBtn.addEventListener("click", async () => {
-  const message = document.getElementById("favorite-message");
-
-  // 현재 로그인한 사용자 확인
-  const {
-    data: { user },
-    error: userError
-  } = await supabaseClient.auth.getUser();
-
-  if (userError || !user) {
-    message.textContent = "먼저 로그인해주세요.";
-    return;
-  }
-
-  // favorites 테이블에 테스트 데이터 저장
-  const { error } = await supabaseClient
-    .from("favorites")
-    .insert({
-      user_id: user.id,
-      camping_name: "테스트 캠핑장"
-    });
-
-  if (error) {
-    message.textContent = "저장 실패: " + error.message;
-    console.error(error);
-    return;
-  }
-
-  message.textContent = "DB 저장 성공!";
-});
