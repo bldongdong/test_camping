@@ -1,7 +1,7 @@
 const camps = [
   {
     id: "seorak",
-    name: "설악산 별빛캠핑장",
+    name: "설악산 별빛-캠핑장",
     region: "강원",
     image: "assets/camp01.svg",
     price: "80,000원/박",
