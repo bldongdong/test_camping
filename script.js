@@ -358,3 +358,33 @@ window.addEventListener("DOMContentLoaded", () => {
   setActiveStep(0);
   setInterval(renderReservationStatus, 10000);
 });
+
+const SUPABASE_URL = "https://nublnlxvmppmqkckikho.supabase.co";
+const SUPABASE_KEY = "sb_publishable_N14q0E_ZdujqHHnbfOpvug_9WTnvgF-";
+
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+const loginBtn = document.getElementById("login-btn");
+
+loginBtn.addEventListener("click", async () => {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const message = document.getElementById("login-message");
+
+  const { data, error } =
+    await supabaseClient.auth.signInWithPassword({
+      email: email,
+      password: password
+    });
+
+  if (error) {
+    message.textContent = "로그인 실패: " + error.message;
+    return;
+  }
+
+  message.textContent = "로그인 성공!";
+  console.log(data.user);
+});
